@@ -14,13 +14,13 @@ Modify this README to describe:
 
 *Note: Go 1.12 is needed to build Pulumi providers using Go Modules. Currently, we recommend pinning the version in `.travis.yml` to `1.12.1` to work around an issue with running later versions on Travis CI.*
 
-First, clone this repo with the name of the desired provider in place of `xyz`:
+First, clone this repo with the name of the desired provider in place of `rabbitmq`:
 
 ```
-git clone https://github.com/pulumi/pulumi-tf-provider-boilerplate pulumi-xyz
+git clone https://github.com/pulumi/pulumi-tf-provider-boilerplate pulumi-rabbitmq
 ```
 
-Second, replace references to `xyz` with the name of your provider:
+Second, replace references to `rabbitmq` with the name of your provider:
 
 ```
 make prepare NAME=foo REPOSITORY=github.com/pulumi/pulumi-foo
@@ -41,7 +41,7 @@ In the root of the repository, run:
 
 - `go get github.com/pulumi/scripts/gomod-doccopy` (Note: do not set `GO111MODULE=on` here)
 - `GO111MODULE=on go get github.com/pulumi/pulumi-terraform@master`
-- `GO111MODULE=on go get github.com/terraform-providers/terraform-provider-xyz` (where `xyz` is the name of the provider)
+- `GO111MODULE=on go get github.com/terraform-providers/terraform-provider-rabbitmq` (where `rabbitmq` is the name of the provider)
 - `GO111MODULE=on go mod vendor`
 - `make ensure`
 
@@ -75,14 +75,17 @@ To use from Python, install using `pip`:
 
 To use from Go, use `go get` to grab the latest version of the library
 
-    $ go get github.com/pulumi/pulumi-xyz/sdk/go/...
+    $ go get github.com/pulumi/pulumi-rabbitmq/sdk/go/...
 
 ## Configuration
 
-The following configuration points are available for the `xyz` provider:
+The following configuration points are available for the `rabbitmq` provider:
 
-- `xyz:apiKey` (environment: `XYZ_API_KEY`) - the API key for `xyz`
-- `xyz:region` (environment: `XYZ_REGION`) - the region in which to deploy resources
+- `rabbitmq:endpoint`  (Required) The HTTP URL of the management plugin on the RabbitMQ server. The RabbitMQ management plugin must be enabled in order to use this provder. Note: This is not the IP address or hostname of the RabbitMQ server that you would use to access RabbitMQ directly.
+- `rabbitmq:username` - (Required) Username to use to authenticate with the server.
+- `rabbitmq:password` - (Optional) Password for the given user.
+- `rabbitmq:insecure` - (Optional) Trust self-signed certificates.
+- `rabbitmq:cacert_file` - (Optional) The path to a custom CA / intermediate certificate.
 
 ## Reference
 

@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xyz
+package rabbitmq
 
 import (
 	"unicode"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
 	"github.com/pulumi/pulumi-terraform/pkg/tfbridge"
-	"github.com/pulumi/pulumi/pkg/resource"
 	"github.com/pulumi/pulumi/pkg/tokens"
-	"github.com/terraform-providers/terraform-provider-xyz/xyz"
+	"github.com/terraform-providers/terraform-provider-rabbitmq/rabbitmq"
 )
 
 // all of the token components used below.
 const (
 	// packages:
-	mainPkg = "xyz"
+	mainPkg = "rabbitmq"
 	// modules:
 	mainMod = "index" // the y module
 )
@@ -43,14 +41,6 @@ func makeType(mod string, typ string) tokens.Type {
 	return tokens.Type(makeMember(mod, typ))
 }
 
-// makeDataSource manufactures a standard resource token given a module and resource name.  It
-// automatically uses the main package and names the file by simply lower casing the data source's
-// first character.
-func makeDataSource(mod string, res string) tokens.ModuleMember {
-	fn := string(unicode.ToLower(rune(res[0]))) + res[1:]
-	return makeMember(mod+"/"+fn, res)
-}
-
 // makeResource manufactures a standard resource token given a module and resource name.  It
 // automatically uses the main package and names the file by simply lower casing the resource's
 // first character.
@@ -59,79 +49,66 @@ func makeResource(mod string, res string) tokens.Type {
 	return makeType(mod+"/"+fn, res)
 }
 
-// boolRef returns a reference to the bool argument.
-func boolRef(b bool) *bool {
-	return &b
-}
-
-// stringValue gets a string value from a property map if present, else ""
-func stringValue(vars resource.PropertyMap, prop resource.PropertyKey) string {
-	val, ok := vars[prop]
-	if ok && val.IsString() {
-		return val.StringValue()
-	}
-	return ""
-}
-
-// preConfigureCallback is called before the providerConfigure function of the underlying provider.
-// It should validate that the provider can be configured, and provide actionable errors in the case
-// it cannot be. Configuration variables can be read from `vars` using the `stringValue` function -
-// for example `stringValue(vars, "accessKey")`.
-func preConfigureCallback(vars resource.PropertyMap, c *terraform.ResourceConfig) error {
-	return nil
-}
-
-// managedByPulumi is a default used for some managed resources, in the absence of something more meaningful.
-var managedByPulumi = &tfbridge.DefaultInfo{Value: "Managed by Pulumi"}
-
 // Provider returns additional overlaid schema and metadata associated with the provider..
 func Provider() tfbridge.ProviderInfo {
 	// Instantiate the Terraform provider
-	p := xyz.Provider().(*schema.Provider)
+	p := rabbitmq.Provider().(*schema.Provider)
 
 	// Create a Pulumi provider mapping
 	prov := tfbridge.ProviderInfo{
 		P:           p,
-		Name:        "xyz",
-		Description: "A Pulumi package for creating and managing xyz cloud resources.",
-		Keywords:    []string{"pulumi", "xyz"},
+		Name:        "rabbitmq",
+		Description: "A Pulumi package for creating and managing rabbitmq cloud resources.",
+		Keywords:    []string{"pulumi", "rabbitmq"},
 		License:     "Apache-2.0",
 		Homepage:    "https://pulumi.io",
-		Repository:  "https://github.com/pulumi/pulumi-xyz",
-		Config:      map[string]*tfbridge.SchemaInfo{
-			// Add any required configuration here, or remove the example below if
-			// no additional points are required.
-			// "region": {
-			// 	Type: makeType("region", "Region"),
-			// 	Default: &tfbridge.DefaultInfo{
-			// 		EnvVars: []string{"AWS_REGION", "AWS_DEFAULT_REGION"},
-			// 	},
-			// },
+		Repository:  "https://github.com/pulumi/pulumi-rabbitmq",
+		Config: map[string]*tfbridge.SchemaInfo{
+			"endpoint": {
+				Type: "string",
+				Default: &tfbridge.DefaultInfo{
+					EnvVars: []string{"RABBITMQ_MANAGEMENT_ENDPOINT"},
+				},
+			},
+			"username": {
+				Type: "string",
+				Default: &tfbridge.DefaultInfo{
+					EnvVars: []string{"RABBITMQ_USERNAME"},
+				},
+			},
+			"password": {
+				Type: "string",
+				Default: &tfbridge.DefaultInfo{
+					EnvVars: []string{"RABBITMQ_PASSWORD"},
+				},
+			},
+			"insecure": {
+				Type: "boolean",
+				Default: &tfbridge.DefaultInfo{
+					EnvVars: []string{"RABBITMQ_INSECURE"},
+				},
+			},
+			"cacert_file": {
+				Type: "string",
+				Default: &tfbridge.DefaultInfo{
+					EnvVars: []string{"RABBITMQ_CACERT_FILE"},
+				},
+			},
 		},
-		PreConfigureCallback: preConfigureCallback,
-		Resources:            map[string]*tfbridge.ResourceInfo{
-			// Map each resource in the Terraform provider to a Pulumi type. Two examples
-			// are below - the single line form is the common case. The multi-line form is
-			// needed only if you wish to override types or other default options.
-			//
-			// "aws_iam_role": {Tok: makeResource(mainMod, "IamRole")}
-			//
-			// "aws_acm_certificate": {
-			// 	Tok: makeResource(mainMod, "Certificate"),
-			// 	Fields: map[string]*tfbridge.SchemaInfo{
-			// 		"tags": {Type: makeType(mainPkg, "Tags")},
-			// 	},
-			// },
+		Resources: map[string]*tfbridge.ResourceInfo{
+			"rabbitmq_binding":     {Tok: makeResource(mainMod, "Binding")},
+			"rabbitmq_exchange":    {Tok: makeResource(mainMod, "Exchange")},
+			"rabbitmq_permissions": {Tok: makeResource(mainMod, "Permissions")},
+			"rabbitmq_policy":      {Tok: makeResource(mainMod, "Policy")},
+			"rabbitmq_queue":       {Tok: makeResource(mainMod, "Queue")},
+			"rabbitmq_user":        {Tok: makeResource(mainMod, "User")},
+			"rabbitmq_vhost":       {Tok: makeResource(mainMod, "VHost")},
 		},
-		DataSources: map[string]*tfbridge.DataSourceInfo{
-			// Map each resource in the Terraform provider to a Pulumi function. An example
-			// is below.
-			// "aws_ami": {Tok: makeDataSource(mainMod, "getAmi")},
-		},
+		DataSources: map[string]*tfbridge.DataSourceInfo{},
 		JavaScript: &tfbridge.JavaScriptInfo{
 			// List any npm dependencies and their versions
 			Dependencies: map[string]string{
-				"@pulumi/pulumi": "latest",
+				"@pulumi/pulumi": "^1.0.0-rc.1",
 			},
 			DevDependencies: map[string]string{
 				"@types/node": "^8.0.25", // so we can access strongly typed node definitions.
@@ -145,7 +122,7 @@ func Provider() tfbridge.ProviderInfo {
 		Python: &tfbridge.PythonInfo{
 			// List any Python dependencies and their version ranges
 			Requires: map[string]string{
-				"pulumi": ">=0.17.28",
+				"pulumi": ">=0.17.28,<2.0.0",
 			},
 		},
 	}
